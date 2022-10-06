@@ -38,7 +38,7 @@ class Attacker():
         Find smallest perturbation size required to change prediction of model for sample x
         If all sizes fail, returns max_size
         '''
-        y_pred, direction = cls.gradient(model, x, y, criterion)
+        y_pred, direction = cls.gradient(model, x, y, criterion, device)
 
         # binary search for smallest perturbation size
         deltas = np.linspace(min_size, max_size, num)

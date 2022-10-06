@@ -18,8 +18,6 @@ if __name__ == "__main__":
     commandLineParser.add_argument('--model_name', type=str, required=True, help='e.g. vgg16')
     commandLineParser.add_argument('--data_name', type=str, required=True, help='e.g. cifar10')
     commandLineParser.add_argument('--data_dir_path', type=str, required=True, help='path to data directory, e.g. data')
-    commandLineParser.add_argument('--bs', type=int, default=64, help="Specify batch size")
-    commandLineParser.add_argument('--num_seeds', type=int, default=1, help="Specify number of seeds for model to load")
     commandLineParser.add_argument('--force_cpu', action='store_true', help='force cpu use')
     args = commandLineParser.parse_args()
 
