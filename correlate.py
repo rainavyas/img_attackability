@@ -40,7 +40,7 @@ if __name__ == "__main__":
     name1 = name1.split('/')[-1].split('_')[0]
     name2 = args.perts2
     name2 = name2.split('/')[-1].split('_')[0]
-    data = np.stack(np.asarray(p1), np.asarray(p2))
+    data = np.stack(np.array(p1), np.array(p2))
     sns.jointplot(data, kind='reg')
     plt.xlabel(name1)
     plt.ylabel(name2)
