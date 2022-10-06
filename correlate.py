@@ -8,6 +8,9 @@ import sys
 import os
 import argparse
 import scipy.stats as stats
+import seaborn as sns
+import matplotlib.pyplot as plt
+import numpy as np
 
 if __name__ == "__main__":
 
@@ -15,7 +18,7 @@ if __name__ == "__main__":
     commandLineParser = argparse.ArgumentParser()
     commandLineParser.add_argument('--perts1', type=str, required=True, help='path to first set of perturbation')
     commandLineParser.add_argument('--perts2', type=str, required=True, help='path to first set of perturbation')
-    commandLineParser.add_argument('--plot', type=str, default='None', help='file path to plot the perturbations against one another')
+    commandLineParser.add_argument('--plot', type=str, required=True, help='file path to plot')
     args = commandLineParser.parse_args()
 
     # Save the command run
@@ -32,7 +35,16 @@ if __name__ == "__main__":
     spearman, _ = stats.spearmanr(p1, p2)
     print(f'PCC:\t{pcc}\nSpearman:\t{spearman}')
 
-    # # Scatter plot
-    # if args
+    # Scatter plot
+    name1 = args.perts1
+    name1 = name1.split('/')[-1].split('_')[0]
+    name2 = args.perts2
+    name2 = name2.split('/')[-1].split('_')[0]
+    data = np.stack(np.asarray(p1), np.asarray(p2))
+    sns.jointplot(data, kind='reg')
+    plt.xlabel(name1)
+    plt.ylabel(name2)
+    plt.savefig(args.plot, bbox_inches='tight')
+    
 
 
