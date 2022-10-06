@@ -42,7 +42,7 @@ if __name__ == "__main__":
     name2 = args.perts2
     name2 = name2.split('/')[-1].split('_')[0]
     data = pd.DataFrame.from_dict({name1:p1, name2:p2})
-    sns.jointplot(data, x=name1, y=name2, kind='reg')
+    sns.jointplot(data, x=name1, y=name2, kind='reg', scatter_kws={'s': 1})
     # plt.xlabel(name1)
     # plt.ylabel(name2)
     plt.savefig(args.plot, bbox_inches='tight')
