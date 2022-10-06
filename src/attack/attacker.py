@@ -12,11 +12,11 @@ class Attacker():
         model.eval()
 
         x.requires_grad = True
-        y_pred = model(torch.unsqueeze(x, 0))
-        loss = criterion(y_pred, torch.unsqueeze(y, 0))
+        y_pred = model(torch.unsqueeze(x, 0)).squeeze(0)
+        loss = torch.log(y_pred[y])
         loss.backward()
         direction = x.grad
-        return y_pred.squeeze(0).cpu().detach(), direction.squeeze(0).cpu().detach(),
+        return y_pred.squeeze(0).cpu().detach(), direction.cpu().detach(),
 
     @staticmethod
     def can_fgsm(model, x, y_pred, direction, delta, device):
