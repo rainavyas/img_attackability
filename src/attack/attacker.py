@@ -25,7 +25,6 @@ class Attacker():
         sign = torch.sign(direction)
         x_attack = x+(delta*sign)
         x_attack = x_attack.to(device)
-        import pdb; pdb.set_trace()
         with torch.no_grad():
             y_pred_attack = model(torch.unsqueeze(x_attack, 0)).squeeze(0)
         if torch.argmax(y_pred).item() == torch.argmax(y_pred_attack).item():
@@ -34,7 +33,7 @@ class Attacker():
             return True
     
     @classmethod
-    def get_pert_size(cls, x, y, model, device, method='fgsm', min_size=0.02, max_size=0.3, num=20):
+    def get_pert_size(cls, x, y, model, device, method='fgsm', min_size=0.02, max_size=0.4, num=40):
         '''
         Find smallest perturbation size required to change prediction of model for sample x
         If all sizes fail, returns max_size
@@ -60,7 +59,7 @@ class Attacker():
 
 
     @classmethod
-    def get_all_pert_sizes(cls, ds, model, device, method='fgsm', min_size=0.02, max_size=0.3, num=20):
+    def get_all_pert_sizes(cls, ds, model, device, method='fgsm', min_size=0.02, max_size=0.4, num=40):
         '''
         Calculate smallest perturbation for adv attack per sample
         '''
