@@ -8,7 +8,7 @@ class Attacker():
         Return gradient of loss wrt to input x
         '''
         x = x.to(device)
-        y = y.to(device)
+        y = torch.LongTensor(y).to(device)
         model.eval()
 
         x.retain_grad()
