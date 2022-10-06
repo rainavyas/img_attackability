@@ -33,7 +33,7 @@ class Attacker():
             return True
     
     @classmethod
-    def get_pert_size(cls, x, y, model, device, method='fgsm', min_size=0.02, max_size=0.4, num=40):
+    def get_pert_size(cls, x, y, model, device, method='fgsm', min_size=0.02, max_size=0.4, num=100):
         '''
         Find smallest perturbation size required to change prediction of model for sample x
         If all sizes fail, returns max_size
@@ -59,7 +59,7 @@ class Attacker():
 
 
     @classmethod
-    def get_all_pert_sizes(cls, ds, model, device, method='fgsm', min_size=0.02, max_size=0.4, num=40):
+    def get_all_pert_sizes(cls, ds, model, device, method='fgsm', min_size=0.02, max_size=0.4, num=100):
         '''
         Calculate smallest perturbation for adv attack per sample
         '''
