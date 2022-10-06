@@ -39,10 +39,9 @@ if __name__ == "__main__":
     # Load model
     model = model_sel(args.model_name, model_path=args.model_path)
     model.to(device)
-    criterion = nn.CrossEntropyLoss().to(device)
 
     # Get minimum perturbation sizes per sample
-    perts = Attacker.get_all_pert_sizes(ds, model, criterion, device, method='fgsm', min_size=0.02, max_size=0.3, num=20)
+    perts = Attacker.get_all_pert_sizes(ds, model, device, method='fgsm', min_size=0.02, max_size=0.3, num=20)
     perts = torch.Tensor(perts)
 
     # Report mean and standard deviation
