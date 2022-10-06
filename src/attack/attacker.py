@@ -13,7 +13,7 @@ class Attacker():
 
         x.requires_grad = True
         y_pred = model(torch.unsqueeze(x, 0)).squeeze(0)
-        import pdb; pdb.set_trace()
+
         loss = torch.log(y_pred[y])
         loss.backward()
         direction = x.grad
@@ -68,6 +68,7 @@ class Attacker():
         for i in range(len(ds)):
             print(f'On attack {i}/{len(ds)}')
             (x, y) = ds[i]
+            import pdb; pdb.set_trace()
             min_perts.append(cls.get_pert_size(x, y, model, criterion, device, method=method, min_size=min_size, max_size=max_size, num=num))
         return min_perts
 
