@@ -15,7 +15,7 @@ if __name__ == "__main__":
     commandLineParser = argparse.ArgumentParser()
     commandLineParser.add_argument('--perts1', type=str, required=True, help='path to first set of perturbation')
     commandLineParser.add_argument('--perts2', type=str, required=True, help='path to first set of perturbation')
-    commandLineParser.add_argument('plot', type=str, default='None', help='file path to plot the perturbations against one another')
+    commandLineParser.add_argument('--plot', type=str, default='None', help='file path to plot the perturbations against one another')
     args = commandLineParser.parse_args()
 
     # Save the command run
