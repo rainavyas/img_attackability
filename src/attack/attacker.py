@@ -27,7 +27,7 @@ class Attacker():
         x_attack = x_attack.to(device)
         with torch.no_grad():
             y_pred_attack = model(torch.unsqueeze(x_attack, 0)).squeeze(0)
-        if torch.argmax(y_pred.item()) == torch.argmax(y_pred_attack.item()):
+        if torch.argmax(y_pred).item() == torch.argmax(y_pred_attack).item():
             return False
         else:
             return True
