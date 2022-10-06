@@ -13,6 +13,7 @@ class Attacker():
 
         x.requires_grad = True
         y_pred = model(torch.unsqueeze(x, 0)).squeeze(0)
+        import pdb; pdb.set_trace()
         loss = torch.log(y_pred[y])
         loss.backward()
         direction = x.grad
