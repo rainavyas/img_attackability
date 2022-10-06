@@ -25,6 +25,7 @@ class Attacker():
         sign = torch.sign(direction)
         x_attack = x+(delta*sign)
         x_attack = x_attack.to(device)
+        import pdb; pdb.set_trace()
         with torch.no_grad():
             y_pred_attack = model(torch.unsqueeze(x_attack, 0)).squeeze(0)
         if torch.argmax(y_pred).item() == torch.argmax(y_pred_attack).item():
