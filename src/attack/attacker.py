@@ -13,7 +13,7 @@ class Attacker():
         x.requires_grad = True
         y_pred = model(torch.unsqueeze(x, 0)).squeeze(0)
 
-        loss = torch.log(y_pred[y])
+        loss = -1*torch.log(y_pred[y])
         loss.backward()
         direction = x.grad
         return y_pred.squeeze(0).cpu().detach(), direction.cpu().detach(),
