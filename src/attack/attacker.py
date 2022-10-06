@@ -11,7 +11,7 @@ class Attacker():
         y = torch.LongTensor(y).to(device)
         model.eval()
 
-        x.retain_grad()
+        x.requires_grad = True
         y_pred = model(torch.unsqueeze(x, 0))
         loss = criterion(y_pred, torch.unsqueeze(y))
         loss.backward()
@@ -26,7 +26,7 @@ class Attacker():
         x_attack = x+(delta*sign)
         x_attack = x_attack.to(device)
         with torch.no_grad():
-            y_pred_attack = model(x_attack).squeeze(0)
+            y_pred_attack = model(torch.unsqueeze(x_attack, 0)).squeeze(0)
         if torch.argmax(y_pred.item()) == torch.argmax(y_pred_attack.item()):
             return False
         else:
