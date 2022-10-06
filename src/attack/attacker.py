@@ -3,12 +3,11 @@ import numpy as np
 
 class Attacker():
     @staticmethod
-    def gradient(model, x, y, criterion, device):
+    def gradient(model, x, y, device):
         '''
         Return gradient of loss wrt to input x
         '''
         x = x.to(device)
-        y = torch.LongTensor(y).to(device)
         model.eval()
 
         x.requires_grad = True
@@ -34,12 +33,12 @@ class Attacker():
             return True
     
     @classmethod
-    def get_pert_size(cls, x, y, model, criterion, device, method='fgsm', min_size=0.02, max_size=0.3, num=20):
+    def get_pert_size(cls, x, y, model, device, method='fgsm', min_size=0.02, max_size=0.3, num=20):
         '''
         Find smallest perturbation size required to change prediction of model for sample x
         If all sizes fail, returns max_size
         '''
-        y_pred, direction = cls.gradient(model, x, y, criterion, device)
+        y_pred, direction = cls.gradient(model, x, y, device)
 
         # binary search for smallest perturbation size
         deltas = np.linspace(min_size, max_size, num)
@@ -60,7 +59,7 @@ class Attacker():
 
 
     @classmethod
-    def get_all_pert_sizes(cls, ds, model, criterion, device, method='fgsm', min_size=0.02, max_size=0.3, num=20):
+    def get_all_pert_sizes(cls, ds, model, device, method='fgsm', min_size=0.02, max_size=0.3, num=20):
         '''
         Calculate smallest perturbation for adv attack per sample
         '''
@@ -68,8 +67,7 @@ class Attacker():
         for i in range(len(ds)):
             print(f'On attack {i}/{len(ds)}')
             (x, y) = ds[i]
-            import pdb; pdb.set_trace()
-            min_perts.append(cls.get_pert_size(x, y, model, criterion, device, method=method, min_size=min_size, max_size=max_size, num=num))
+            min_perts.append(cls.get_pert_size(x, y, model, device, method=method, min_size=min_size, max_size=max_size, num=num))
         return min_perts
 
 
