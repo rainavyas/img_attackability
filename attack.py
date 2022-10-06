@@ -13,7 +13,7 @@ if __name__ == "__main__":
 
     # Get command line arguments
     commandLineParser = argparse.ArgumentParser()
-    commandLineParser.add_argument('--out_path', type=str, required=True, help='path to save output file as .pt file')
+    commandLineParser.add_argument('--out_dir', type=str, required=True, help='dir to save output file as .pt file')
     commandLineParser.add_argument('--model_path', type=str, required=True, help='trained model path')
     commandLineParser.add_argument('--model_name', type=str, required=True, help='e.g. vgg16')
     commandLineParser.add_argument('--data_name', type=str, required=True, help='e.g. cifar10')
@@ -51,4 +51,5 @@ if __name__ == "__main__":
     print(f'Mean: {torch.mean(perts)}\tStd: {torch.std(perts)}')
 
     # Save the perturbation sizes
-    torch.save(perts, args.out_file)
+    out_file = f'{args.out_dir}/{args.model_name}_{args.data_name}.pt'
+    torch.save(perts, out_file)
