@@ -11,6 +11,7 @@ import scipy.stats as stats
 import seaborn as sns
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 
 if __name__ == "__main__":
 
@@ -40,10 +41,10 @@ if __name__ == "__main__":
     name1 = name1.split('/')[-1].split('_')[0]
     name2 = args.perts2
     name2 = name2.split('/')[-1].split('_')[0]
-    data = np.stack((np.array(p1), np.array(p2)), axis=0)
-    sns.jointplot(data, kind='reg')
-    plt.xlabel(name1)
-    plt.ylabel(name2)
+    data = pd.DataFrame.from_dict({name1:p1, name2:p2})
+    sns.jointplot(data, x=name1, y=name2, kind='reg')
+    # plt.xlabel(name1)
+    # plt.ylabel(name2)
     plt.savefig(args.plot, bbox_inches='tight')
     
 
