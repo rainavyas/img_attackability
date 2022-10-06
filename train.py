@@ -23,7 +23,7 @@ if __name__ == "__main__":
     commandLineParser.add_argument('--weight_decay', type=float, default=1e-4, help="Specify momentum")
     commandLineParser.add_argument('--sch', type=int, default=[100, 150], nargs='+', help="Specify scheduler cycle")
     commandLineParser.add_argument('--seed', type=int, default=1, help="Specify seed")
-    commandLineParser.add_argument('--force_cpu', type=str, choices=['yes', 'no'], default='no', help='force cpu use')
+    commandLineParser.add_argument('--force_cpu', action='store_true', help='force cpu use')
     args = commandLineParser.parse_args()
 
     set_seeds(args.seed)
@@ -36,7 +36,7 @@ if __name__ == "__main__":
         f.write(' '.join(sys.argv)+'\n')
 
     # Get the device
-    if args.force_cpu == 'yes':
+    if args.force_cpu:
         device = torch.device('cpu')
     else:
         device = get_default_device()
