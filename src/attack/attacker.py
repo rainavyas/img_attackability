@@ -76,7 +76,7 @@ class Attacker():
         '''
         Return fraction of attackable samples at each perturbation size threshold
         '''
-        threshs = list(np.linspace(start, end, num))
+        threshs = np.linspace(start, end, num)
         size = len(perts)
         frac_attackable = []
         for t in threshs:
@@ -89,7 +89,7 @@ class Attacker():
         '''
         Return fraction of attackable samples (over all models) at each perturbation size threshold
         '''
-        threshs = list(np.linspace(start, end, num))
+        threshs = np.linspace(start, end, num)
         size = len(perts_all[0])
         frac_attackable = []
         for t in threshs:

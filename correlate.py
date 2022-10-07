@@ -57,11 +57,12 @@ if __name__ == "__main__":
         plt.clf()
 
     if args.binary_sweep:
-        for name, pert in zip(names, args.perts):
-            threshs, frac_attackable = Attacker.attack_frac_sweep(pert)
+        ps = [torch.load(p) for p in args.perts]
+        for name, p in zip(names, ps):
+            threshs, frac_attackable = Attacker.attack_frac_sweep(p)
             plt.plot(threshs, frac_attackable, label=name)
 
-        threshs, frac_attackable = Attacker.attack_frac_sweep_all(args.perts)
+        threshs, frac_attackable = Attacker.attack_frac_sweep_all(ps)
         plt.plot(threshs, frac_attackable, label='All')
         plt.xlabel('Fraction attackable')
         plt.xlabel('Imperceptibility Threshold')
