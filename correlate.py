@@ -66,7 +66,7 @@ if __name__ == "__main__":
 
         threshs, frac_attackable = Attacker.attack_frac_sweep_all(ps)
         plt.plot(threshs, frac_attackable, label='All')
-        plt.xlabel('Fraction attackable')
+        plt.ylabel('Fraction attackable')
         plt.xlabel('Imperceptibility Threshold')
         plt.legend()
 
