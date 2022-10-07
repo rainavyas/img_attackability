@@ -56,7 +56,7 @@ if __name__ == "__main__":
         plt.savefig(args.plot, bbox_inches='tight')
         plt.clf()
 
-    if args.binarysweep:
+    if args.binary_sweep:
         for name, pert in zip(names, args.perts):
             threshs, frac_attackable = Attacker.attack_frac_sweep(pert)
             plt.plot(threshs, frac_attackable, label=name)
