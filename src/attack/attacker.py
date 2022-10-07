@@ -1,5 +1,6 @@
 import torch
 import numpy as np
+from itertools import product
 
 class Attacker():
     @staticmethod
@@ -69,6 +70,42 @@ class Attacker():
             (x, y) = ds[i]
             min_perts.append(cls.get_pert_size(x, y, model, device, method=method, min_size=min_size, max_size=max_size, num=num))
         return min_perts
+    
+    @staticmethod
+    def attack_frac_sweep(perts, start=0.0, end=0.38, num=100):
+        '''
+        Return fraction of attackable samples at each perturbation size threshold
+        '''
+        threshs = np.linspace(start, end, num)
+        size = len(perts)
+        frac_attackable = []
+        for t in threshs:
+            num_att = len([p for p in perts if p<=t])
+            frac_attackable.append(num_att/size)
+        return threshs, frac_attackable
+
+    @staticmethod
+    def attack_frac_sweep_all(perts_all, start=0.0, end=0.38, num=100):
+        '''
+        Return fraction of attackable samples (over all models) at each perturbation size threshold
+        '''
+        threshs = np.linspace(start, end, num)
+        size = len(perts_all[0])
+        frac_attackable = []
+        for t in threshs:
+            num_att = 0
+            for sample in zip(*perts_all):
+                smaller = True
+                for pert in sample:
+                    if pert > t:
+                        smaller = False
+                        break
+                if smaller:
+                    num_att+=1
+            frac_attackable.append(num_att/size)
+        return threshs, frac_attackable
+    
+
 
 
 
