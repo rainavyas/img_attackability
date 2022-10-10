@@ -23,7 +23,7 @@ def data_attack_sel(name, root, pert_paths, thresh=0.2, val=0.2):
             labels.append(0)
         else:
             labels.append(1)
-        labels = torch.LongTensor(labels)
+    labels = torch.LongTensor(labels)
     
     ds = data_sel(name, root, train=False)
     xs = []
