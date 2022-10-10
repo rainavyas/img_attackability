@@ -55,3 +55,12 @@ if __name__ == "__main__":
     # Initialise model
     model = model_sel(args.model_name)
     model.to(device)
+
+    # Define learning objects
+    optimizer = torch.optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay)
+    scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=args.sch)
+    criterion = nn.CrossEntropyLoss().to(device)
+
+    # Train
+    trainer = Trainer(device, model, optimizer, criterion, scheduler)
+    trainer.train_process(train_dl, val_dl, out_file, max_epochs=args.epochs)
