@@ -28,7 +28,7 @@ def data_sel(name, root, train=True, val=0.2):
         if train:
             num_val = int(val*len(ds))
             num_train = len(ds) - num_val
-            train_ds, val_ds = random_split(ds, [num_train, num_val])
+            train_ds, val_ds = random_split(ds, [num_train, num_val], generator=torch.Generator().manual_seed(42))
             return train_ds, val_ds
 
         return test_ds

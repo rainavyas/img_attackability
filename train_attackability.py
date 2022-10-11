@@ -1,5 +1,5 @@
 '''
-Train system to detect unattackable samples
+Train system to detect attackable samples
 '''
 
 import torch

@@ -19,6 +19,7 @@ if __name__ == "__main__":
     commandLineParser.add_argument('--data_name', type=str, required=True, help='e.g. cifar10')
     commandLineParser.add_argument('--data_dir_path', type=str, required=True, help='path to data directory, e.g. data')
     commandLineParser.add_argument('--force_cpu', action='store_true', help='force cpu use')
+    commandLineParser.add_argument('--val', action='store_true', help='apply attack to validation data')
     args = commandLineParser.parse_args()
 
     # Save the command run
@@ -33,8 +34,13 @@ if __name__ == "__main__":
     else:
         device = get_default_device()
 
-    # Load the test data
-    ds = data_sel(args.data_name, args.data_dir_path, train=False)
+    # Load the test data or validation data
+    if not args.val:
+        ds = data_sel(args.data_name, args.data_dir_path, train=False)
+    else:
+        _, ds = data_sel(args.data_name, args.data_dir_path, train=True)
+
+    import pdb; pdb.set_trace()
 
     # Load model
     model = model_sel(args.model_name, model_path=args.model_path)
