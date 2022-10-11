@@ -56,7 +56,6 @@ if __name__ == "__main__":
     logits, labels = Trainer.eval(dl, model, criterion, device, return_logits=True)
     s = torch.nn.Sigmoid()
     probs = s(logits[:,1].squeeze(dim=-1))
-    import pdb; pdb.set_trace()
 
     # Get precision-recall curves
     precision, recall, _ = precision_recall_curve(labels, probs)
