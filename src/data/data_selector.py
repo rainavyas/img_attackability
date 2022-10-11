@@ -34,6 +34,7 @@ def data_sel(name, root, train=True, val=0.2):
             # generate subset based on indices
             train_ds = Subset(ds, train_indices)
             val_ds = Subset(ds, val_indices)
+            import pdb; pdb.set_trace()
                             
                             
             # train_ds, val_ds = random_split(ds, [num_train, num_val], generator=torch.Generator().manual_seed(42))
