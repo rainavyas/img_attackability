@@ -40,8 +40,6 @@ if __name__ == "__main__":
     else:
         _, ds = data_sel(args.data_name, args.data_dir_path, train=True)
 
-    import pdb; pdb.set_trace()
-
     # Load model
     model = model_sel(args.model_name, model_path=args.model_path)
     model.to(device)

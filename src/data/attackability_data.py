@@ -1,5 +1,6 @@
 import torch
-from torch.utils.data import TensorDataset, random_split
+from torch.utils.data import Subset, TensorDataset
+from sklearn.model_selection import train_test_split
 
 from .data_selector import data_sel
 
@@ -39,7 +40,8 @@ def data_attack_sel(name, root, pert_paths, thresh=0.2, val=0.2, use_val=True):
     if use_val:
         # split into train and validation
         num_val = int(val*len(ds))
-        num_train = len(ds) - num_val
-        train_ds, val_ds = random_split(ds, [num_train, num_val], generator=torch.Generator().manual_seed(42))
+        train_indices, val_indices = train_test_split(range(len(ds)), test_size=num_val, random_state=42)
+        train_ds = Subset(ds, train_indices)
+        val_ds = Subset(ds, val_indices)
 
     return train_ds, val_ds
