@@ -53,7 +53,7 @@ if __name__ == "__main__":
     val_dl = torch.utils.data.DataLoader(val_ds, batch_size=args.bs, shuffle=False)
 
     # Initialise model
-    model = model_sel(args.model_name)
+    model = model_sel(args.model_name, num_classes=2)
     model.to(device)
 
     # Define learning objects

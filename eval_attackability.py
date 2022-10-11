@@ -48,7 +48,7 @@ if __name__ == "__main__":
     dl = torch.utils.data.DataLoader(ds, batch_size=args.bs)
 
     # Load model
-    model = model_sel(args.model_name, model_path=args.model_path)
+    model = model_sel(args.model_name, model_path=args.model_path, num_classes=2)
     model.to(device)
 
     # Get probability predictions
