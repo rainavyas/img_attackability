@@ -29,7 +29,7 @@ def data_sel(name, root, train=True, val=0.2):
         
         if train:
             num_val = int(val*len(ds))
-            train_indices, val_indices, _, _ = train_test_split(range(len(ds)), test_size=num_val, random_state=42)
+            train_indices, val_indices = train_test_split(range(len(ds)), test_size=num_val, random_state=42)
 
             # generate subset based on indices
             train_ds = Subset(ds, train_indices)
