@@ -58,6 +58,7 @@ class Trainer():
         model.eval()
 
         all_logits = []
+        labels = []
         with torch.no_grad():
             for (x, y) in val_loader:
 
@@ -67,6 +68,7 @@ class Trainer():
                 # Forward pass
                 logits = model(x)
                 all_logits.append(logits)
+                labels.append(y.cpu().detach().item())
                 loss = criterion(logits, y)
 
                 # measure accuracy and record loss
@@ -75,7 +77,7 @@ class Trainer():
                 losses.update(loss.item(), x.size(0))
 
         if return_logits:
-            return torch.cat(all_logits, dim=0).detach().cpu()
+            return torch.cat(all_logits, dim=0).detach().cpu(), labels
 
         print(f'Test\t Loss ({losses.avg:.4f})\tAccuracy ({accs.avg:.3f})\n')
         return accs.avg
