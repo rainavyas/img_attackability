@@ -54,9 +54,9 @@ if __name__ == "__main__":
     # Get probability predictions
     criterion = nn.CrossEntropyLoss().to(device)
     logits, labels = Trainer.eval(dl, model, criterion, device, return_logits=True)
-    import pdb; pdb.set_trace()
     s = torch.nn.Sigmoid()
-    probs = s(logits)
+    probs = s(logits[:,1].squeeze(dim=-1))
+    import pdb; pdb.set_trace()
 
     # Get precision-recall curves
     precision, recall, _ = precision_recall_curve(labels, probs)
