@@ -27,6 +27,7 @@ if __name__ == "__main__":
     commandLineParser.add_argument('--perts', type=str, required=True, nargs='+', help='paths to perturbations')
     commandLineParser.add_argument('--plot', type=str, required=True, help='file path to plot')
     commandLineParser.add_argument('--thresh', type=float, default=0.2, help="Specify imperceptibility threshold")
+    commandLineParser.add_argument('--bs', type=int, default=64, help="Specify batch size")
     commandLineParser.add_argument('--force_cpu', action='store_true', help='force cpu use')
     args = commandLineParser.parse_args()
 
