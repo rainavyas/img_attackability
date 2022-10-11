@@ -44,4 +44,6 @@ def data_attack_sel(name, root, pert_paths, thresh=0.2, val=0.2, use_val=True):
         train_ds = Subset(ds, train_indices)
         val_ds = Subset(ds, val_indices)
 
-    return train_ds, val_ds
+        return train_ds, val_ds
+    else:
+        return ds
