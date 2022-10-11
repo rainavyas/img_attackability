@@ -2,7 +2,9 @@ import torch
 import torchvision
 import torchvision.transforms as transforms
 import torchvision.datasets as datasets
-from torch.utils.data import random_split
+from torch.utils.data import Subset
+# from torch.utils.data import random_split
+from sklearn.model_selection import train_test_split
 
 def data_sel(name, root, train=True, val=0.2):
     if name == 'cifar10':
@@ -27,8 +29,14 @@ def data_sel(name, root, train=True, val=0.2):
         
         if train:
             num_val = int(val*len(ds))
-            num_train = len(ds) - num_val
-            train_ds, val_ds = random_split(ds, [num_train, num_val], generator=torch.Generator().manual_seed(42))
+            train_indices, val_indices, _, _ = train_test_split(range(len(ds)), test_size=num_val, random_state=42)
+
+            # generate subset based on indices
+            train_ds = Subset(ds, train_indices)
+            val_ds = Subset(ds, val_indices)
+                            
+                            
+            # train_ds, val_ds = random_split(ds, [num_train, num_val], generator=torch.Generator().manual_seed(42))
             return train_ds, val_ds
 
         return test_ds
