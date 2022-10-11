@@ -53,6 +53,7 @@ if __name__ == "__main__":
         name1 = names[0]
         name2 = names[1]
         data = pd.DataFrame.from_dict({name1:p1, name2:p2})
+        sns.jointplot(x = name1, y = name2, kind = "reg", data = data)
         plt.savefig(args.plot, bbox_inches='tight')
         plt.clf()
 
