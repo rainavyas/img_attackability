@@ -34,7 +34,7 @@ class Attacker():
             return True
     
     @classmethod
-    def get_pert_size(cls, x, y, model, device, method='fgsm', min_size=0.02, max_size=0.4, num=100):
+    def get_pert_size(cls, x, y, model, device, method='fgsm', min_size=0.002, max_size=0.4, num=200):
         '''
         Find smallest perturbation size required to change prediction of model for sample x
         If all sizes fail, returns max_size
@@ -60,7 +60,7 @@ class Attacker():
 
 
     @classmethod
-    def get_all_pert_sizes(cls, ds, model, device, method='fgsm', min_size=0.02, max_size=0.4, num=100):
+    def get_all_pert_sizes(cls, ds, model, device, method='fgsm', min_size=0.002, max_size=0.4, num=200):
         '''
         Calculate smallest perturbation for adv attack per sample
         '''
@@ -72,7 +72,7 @@ class Attacker():
         return min_perts
     
     @staticmethod
-    def attack_frac_sweep(perts, start=0.0, end=0.38, num=100):
+    def attack_frac_sweep(perts, start=0.0, end=0.38, num=200):
         '''
         Return fraction of attackable samples at each perturbation size threshold
         '''
@@ -85,7 +85,7 @@ class Attacker():
         return threshs, frac_attackable
 
     @staticmethod
-    def attack_frac_sweep_all(perts_all, start=0.0, end=0.38, num=100):
+    def attack_frac_sweep_all(perts_all, start=0.0, end=0.38, num=200):
         '''
         Return fraction of attackable samples (over all models) at each perturbation size threshold
         '''

@@ -1,5 +1,7 @@
 '''
 Train system to detect attackable samples
+
+Note, model_name: linear-vgg16 means we train a linear classifier on top of vgg16 embedding layer
 '''
 
 import torch
@@ -11,6 +13,7 @@ from src.tools.tools import get_default_device, set_seeds
 from src.models.model_selector import model_sel
 from src.data.attackability_data import data_attack_sel
 from src.training.trainer import Trainer
+from src.models.model_embedding import model_embed
 
 if __name__ == "__main__":
 
@@ -26,14 +29,20 @@ if __name__ == "__main__":
     commandLineParser.add_argument('--epochs', type=int, default=200, help="Specify max epochs")
     commandLineParser.add_argument('--lr', type=float, default=0.001, help="Specify learning rate")
     commandLineParser.add_argument('--momentum', type=float, default=0.9, help="Specify momentum")
-    commandLineParser.add_argument('--weight_decay', type=float, default=1e-4, help="Specify momentum")
+    commandLineParser.add_argument('--weight_decay', type=float, default=1e-4, help="Specify weight decay")
     commandLineParser.add_argument('--sch', type=int, default=[100, 150], nargs='+', help="Specify scheduler cycle")
     commandLineParser.add_argument('--seed', type=int, default=1, help="Specify seed")
     commandLineParser.add_argument('--force_cpu', action='store_true', help='force cpu use')
+    commandLineParser.add_argument('--only_correct', action='store_true', help='filter to only train with correctly classified samples')
+    commandLineParser.add_argument('--preds', type=str, default='', nargs='+', help='If only_correct, pass paths to saved model predictions')
+    commandLineParser.add_argument('--trained_model_path', type=str, default='', help='path to trained model for embedding linear classifier')
     args = commandLineParser.parse_args()
 
     set_seeds(args.seed)
     out_file = f'{args.out_dir}/attackability_thresh{args.thresh}_{args.model_name}_{args.data_name}_seed{args.seed}.th'
+    if args.only_correct:
+        out_file = f'{args.out_dir}/attackability_thresh{args.thresh}_{args.model_name}_{args.data_name}_only-correct_seed{args.seed}.th'
+
 
     # Save the command run
     if not os.path.isdir('CMDs'):
@@ -48,12 +57,20 @@ if __name__ == "__main__":
         device = get_default_device()
 
     # Load the training data
-    train_ds, val_ds = data_attack_sel(args.data_name, args.data_dir_path, args.perts, thresh=args.thresh)
+    train_ds, val_ds = data_attack_sel(args.data_name, args.data_dir_path, args.perts, thresh=args.thresh, only_correct=args.only_correct, preds=args.preds)
     train_dl = torch.utils.data.DataLoader(train_ds, batch_size=args.bs, shuffle=True)
     val_dl = torch.utils.data.DataLoader(val_ds, batch_size=args.bs, shuffle=False)
+    if 'linear' in args.model_name:
+        # Get embeddings
+        trained_model_name = args.model_name.split('-')[-1]
+        train_dl, num_feats = model_embed(train_dl, trained_model_name, args.trained_model_path, device, bs=args.bs, shuffle=True)
+        val_dl, _ = model_embed(val_dl, trained_model_name, args.trained_model_path, device, bs=args.bs, shuffle=False)
 
     # Initialise model
-    model = model_sel(args.model_name, num_classes=2)
+    if 'linear' in args.model_name:
+        model = model_sel('linear', num_classes=2, size=num_feats)
+    else:
+        model = model_sel(args.model_name, num_classes=2)
     model.to(device)
 
     # Define learning objects

@@ -1,5 +1,6 @@
 '''
 generate pr curve over test data using trained attackability detector (on val)
+-> can generate pr curve for unattackability if desired
 '''
 
 import torch
@@ -15,6 +16,7 @@ from src.tools.tools import get_default_device, get_best_f_score
 from src.models.model_selector import model_sel
 from src.data.attackability_data import data_attack_sel
 from src.training.trainer import Trainer
+from src.models.model_embedding import model_embed
 
 if __name__ == "__main__":
 
@@ -25,10 +27,14 @@ if __name__ == "__main__":
     commandLineParser.add_argument('--data_name', type=str, required=True, help='e.g. cifar10')
     commandLineParser.add_argument('--data_dir_path', type=str, required=True, help='path to data directory, e.g. data')
     commandLineParser.add_argument('--perts', type=str, required=True, nargs='+', help='paths to perturbations')
-    commandLineParser.add_argument('--plot', type=str, required=True, help='file path to plot')
+    commandLineParser.add_argument('--plot_dir', type=str, required=True, help='path to plot directory')
     commandLineParser.add_argument('--thresh', type=float, default=0.2, help="Specify imperceptibility threshold")
     commandLineParser.add_argument('--bs', type=int, default=64, help="Specify batch size")
     commandLineParser.add_argument('--force_cpu', action='store_true', help='force cpu use')
+    commandLineParser.add_argument('--unattackable', action='store_true', help='pr curve for unattackable sample')
+    commandLineParser.add_argument('--only_correct', action='store_true', help='filter to only train with correctly classified samples')
+    commandLineParser.add_argument('--preds', type=str, default='', nargs='+', help='If only_correct, pass paths to saved model predictions')
+    commandLineParser.add_argument('--trained_model_path', type=str, default='', help='path to trained model for embedding linear classifier')
     args = commandLineParser.parse_args()
 
     # Save the command run
@@ -44,30 +50,47 @@ if __name__ == "__main__":
         device = get_default_device()
 
     # Load the attacked test data
-    ds = data_attack_sel(args.data_name, args.data_dir_path, args.perts, thresh=args.thresh, use_val=False)
+    ds = data_attack_sel(args.data_name, args.data_dir_path, args.perts, thresh=args.thresh, use_val=False, only_correct=args.only_correct, preds=args.preds)
     dl = torch.utils.data.DataLoader(ds, batch_size=args.bs)
+    if 'linear' in args.model_name:
+        # Get embeddings
+        trained_model_name = args.model_name.split('-')[-1]
+        dl, num_feats = model_embed(dl, trained_model_name, args.trained_model_path, device, bs=args.bs, shuffle=True)
 
     # Load model
-    model = model_sel(args.model_name, model_path=args.model_path, num_classes=2)
+    if 'linear' in args.model_name:
+        model = model_sel('linear', model_path=args.model_path, num_classes=2, size=num_feats)
+    else:
+        model = model_sel(args.model_name, model_path=args.model_path, num_classes=2)
     model.to(device)
 
     # Get probability predictions
     criterion = nn.CrossEntropyLoss().to(device)
     logits, labels = Trainer.eval(dl, model, criterion, device, return_logits=True)
     s = torch.nn.Softmax(dim=1)
-    probs = s(logits)[:,1].squeeze(dim=-1)
+    probs = s(logits)[:,1].squeeze(dim=-1).detach().cpu().tolist()
+    labels = labels.detach().cpu().tolist()
+
+    if args.unattackable:
+        probs = [1-p for p in probs]
+        labels = [1-l for l in labels]
 
     # Get precision-recall curves
     precision, recall, _ = precision_recall_curve(labels, probs)
+    precision = precision[:-1]
+    recall = recall[:-1]
     best_precision, best_recall, best_f1 =  get_best_f_score(precision, recall)
     print('Best F1', best_f1)
 
     # plot all the data
+    out_file = f'{args.plot_dir}/unattackability_{args.unattackable}_thresh{args.thresh}_{args.model_name}_{args.data_name}.png'
+    if args.only_correct:
+        out_file = f'{args.plot_dir}/unattackability_{args.unattackable}_thresh{args.thresh}_{args.model_name}_{args.data_name}_only-correct.png'
     sns.set_style("darkgrid")
     plt.plot(recall, precision, 'r-')
     plt.plot(best_recall,best_precision,'bo')
     plt.annotate(F"F1={best_f1:.2f}", (best_recall,best_precision))
     plt.xlabel('Recall')
     plt.ylabel('Precision')
-    plt.savefig(args.plot, bbox_inches='tight')
+    plt.savefig(out_file, bbox_inches='tight')
 
