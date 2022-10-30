@@ -1,5 +1,7 @@
 '''
 Find correlation between adv attack perturbation sizes between models
+Or
+Find correlation between probability of correct and perturbation size
 '''
 
 import torch
@@ -28,6 +30,7 @@ if __name__ == "__main__":
     commandLineParser.add_argument('--preds', type=str, default='', nargs='+', help='If only_correct, pass paths to saved model predictions')
     commandLineParser.add_argument('--data_name', type=str, default='', help='e.g. cifar10')
     commandLineParser.add_argument('--data_dir_path', type=str, default='', help='path to data directory, e.g. data')
+    commandLineParser.add_argument('--pert_v_corr', action='store_true', help='correlation between prob of being correct and pert size')
     args = commandLineParser.parse_args()
 
     # Save the command run
@@ -91,6 +94,44 @@ if __name__ == "__main__":
 
         plt.savefig(args.plot, bbox_inches='tight')
         plt.clf()
+
+    if args.pert_v_corr:
+        '''
+        Scatter plot of
+            probabaility of being correct 
+            vs
+            perturbation size
+        '''
+        ps = ps[0]
+        preds = [torch.load(p) for p in args.preds][0]
+
+        # Get probability of correct label - assume validation data is being used
+        _, ds = data_sel(args.data_name, args.data_dir_path, train=True)
+        probs = []
+        for pred, ind in zip(preds, range(len(ds))):
+            l = ds[ind][1]
+            prob = pred[l].item()
+            probs.append(prob)
+
+        pcc, _ = stats.pearsonr(ps, probs)
+        spearman, _ = stats.spearmanr(ps, probs)
+        print(f'PCC:\t{pcc}\nSpearman:\t{spearman}')
+
+        sns.set_style("darkgrid")
+        name1 = 'Perturbation Size'
+        name2 = 'Probability Correct'
+        data = pd.DataFrame.from_dict({name1:ps, name2:probs})
+        # sns.jointplot(x = name1, y = name2, kind = "reg", data = data, scatter_kws={'s': 1})
+        # sns.jointplot(x = name1, y = name2, kind='scatter', data = data, s=2)
+
+        plt.scatter(ps, probs, label='All', s=2)
+        plt.ylabel('Probability Correct')
+        plt.xlabel('Perturbation Size')
+
+        plt.savefig(args.plot, bbox_inches='tight')
+        plt.clf()
+
+
 
     
 
