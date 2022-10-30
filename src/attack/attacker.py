@@ -4,7 +4,7 @@ from itertools import product
 
 class Attacker():
     @staticmethod
-    def gradient(model, x, y, device):
+    def gradient(model, x, y, device, use_pred_label=True):
         '''
         Return gradient of loss wrt to input x
         '''
@@ -13,7 +13,11 @@ class Attacker():
 
         x.requires_grad = True
         y_pred = model(torch.unsqueeze(x, 0)).squeeze(0)
-
+        
+        if use_pred_label:
+            # use predicted label to calculate loss wrt to
+            y = torch.argmax(y_pred).item()
+            
         loss = -1*torch.log(y_pred[y])
         loss.backward()
         direction = x.grad
