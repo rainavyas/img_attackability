@@ -32,7 +32,7 @@ if __name__ == "__main__":
     commandLineParser.add_argument('--bs', type=int, default=64, help="Specify batch size")
     commandLineParser.add_argument('--force_cpu', action='store_true', help='force cpu use')
     commandLineParser.add_argument('--unattackable', action='store_true', help='pr curve for unattackable sample')
-    commandLineParser.add_argument('--only_correct', action='store_true', help='filter to only train with correctly classified samples')
+    commandLineParser.add_argument('--only_correct', action='store_true', help='filter to only eval with correctly classified samples')
     commandLineParser.add_argument('--preds', type=str, default='', nargs='+', help='If only_correct, pass paths to saved model predictions')
     commandLineParser.add_argument('--trained_model_path', type=str, default='', help='path to trained model for embedding linear classifier')
     args = commandLineParser.parse_args()

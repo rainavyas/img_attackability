@@ -31,6 +31,8 @@ if __name__ == "__main__":
     commandLineParser.add_argument('--data_name', type=str, default='', help='e.g. cifar10')
     commandLineParser.add_argument('--data_dir_path', type=str, default='', help='path to data directory, e.g. data')
     commandLineParser.add_argument('--pert_v_corr', action='store_true', help='correlation between prob of being correct and pert size')
+    commandLineParser.add_argument('--pert_v_conf', action='store_true', help='correlation between prob of prediction and pert size')
+    commandLineParser.add_argument('--corr_v_conf', action='store_true', help='correlation between prob of prediction and prob of being correct')
     args = commandLineParser.parse_args()
 
     # Save the command run
@@ -108,10 +110,14 @@ if __name__ == "__main__":
         # Get probability of correct label - assume validation data is being used
         _, ds = data_sel(args.data_name, args.data_dir_path, train=True)
         probs = []
+        corrects = []
         for pred, ind in zip(preds, range(len(ds))):
             l = ds[ind][1]
             prob = pred[l].item()
             probs.append(prob)
+
+            correct = torch.argmax(pred).item() == l
+            corrects.append(correct)
 
         pcc, _ = stats.pearsonr(ps, probs)
         spearman, _ = stats.spearmanr(ps, probs)
@@ -120,13 +126,95 @@ if __name__ == "__main__":
         sns.set_style("darkgrid")
         name1 = 'Perturbation Size'
         name2 = 'Probability Correct'
-        data = pd.DataFrame.from_dict({name1:ps, name2:probs})
+        data = pd.DataFrame.from_dict({name1:ps, name2:probs, 'correct':corrects})
         # sns.jointplot(x = name1, y = name2, kind = "reg", data = data, scatter_kws={'s': 1})
-        # sns.jointplot(x = name1, y = name2, kind='scatter', data = data, s=2)
+        sns.jointplot(x = name1, y = name2, kind='scatter', data = data, hue='correct', s=2, joint_kws={'alpha':0.5})
 
-        plt.scatter(ps, probs, label='All', s=2)
-        plt.ylabel('Probability Correct')
-        plt.xlabel('Perturbation Size')
+        # plt.scatter(ps, probs, label='All', s=2)
+        # plt.ylabel('Probability Correct')
+        # plt.xlabel('Perturbation Size')
+
+        plt.savefig(args.plot, bbox_inches='tight')
+        plt.clf()
+
+    if args.pert_v_conf:
+        '''
+        Scatter plot of
+            probabaility of predicted class
+            vs
+            perturbation size
+        '''
+        ps = ps[0]
+        preds = [torch.load(p) for p in args.preds][0]
+
+        # Get probability of predicted label - assume validation data is being used
+        _, ds = data_sel(args.data_name, args.data_dir_path, train=True)
+        probs = []
+        corrects = []
+        for pred, ind in zip(preds, range(len(ds))):
+            l = ds[ind][1]
+            pred_class = torch.argmax(pred).item()
+            prob = pred[pred_class].item()
+            probs.append(prob)
+
+            correct = pred_class == l
+            corrects.append(correct)
+
+        pcc, _ = stats.pearsonr(ps, probs)
+        spearman, _ = stats.spearmanr(ps, probs)
+        print(f'PCC:\t{pcc}\nSpearman:\t{spearman}')
+
+        sns.set_style("darkgrid")
+        name1 = 'Perturbation Size'
+        name2 = 'Prediction Confidence'
+        data = pd.DataFrame.from_dict({name1:ps, name2:probs, 'correct':corrects})
+        # sns.jointplot(x = name1, y = name2, kind = "reg", data = data, scatter_kws={'s': 1})
+        sns.jointplot(x = name1, y = name2, kind='scatter', data = data, hue='correct', s=2, joint_kws={'alpha':0.5})
+
+        # plt.scatter(ps, probs, label='All', s=2)
+        # plt.ylabel('Probability Correct')
+        # plt.xlabel('Perturbation Size')
+
+        plt.savefig(args.plot, bbox_inches='tight')
+        plt.clf()
+
+if args.corr_v_conf:
+        '''
+        Scatter plot of
+            probabaility of predicted class
+            vs
+            probability of correct class
+        '''
+        preds = [torch.load(p) for p in args.preds][0]
+
+        # Get probability of correct and predicted label - assume validation data is being used
+        _, ds = data_sel(args.data_name, args.data_dir_path, train=True)
+        prob_corrs = []
+        prob_preds = []
+        corrects = []
+        for pred, ind in zip(preds, range(len(ds))):
+            l = ds[ind][1]
+            pred_class = torch.argmax(pred).item()
+            prob_preds.append(pred[pred_class].item())
+            prob_corrs.append(pred[l].item())
+
+            correct = pred_class == l
+            corrects.append(correct)
+
+        pcc, _ = stats.pearsonr(prob_corrs, prob_preds)
+        spearman, _ = stats.spearmanr(prob_corrs, prob_preds)
+        print(f'PCC:\t{pcc}\nSpearman:\t{spearman}')
+
+        sns.set_style("darkgrid")
+        name1 = 'Probability Correct'
+        name2 = 'Prediction Confidence'
+        data = pd.DataFrame.from_dict({name1:prob_corrs, name2:prob_preds, 'correct':corrects})
+        # sns.jointplot(x = name1, y = name2, kind = "reg", data = data, scatter_kws={'s': 1})
+        sns.jointplot(x = name1, y = name2, kind='scatter', data = data, hue='correct', s=2, joint_kws={'alpha':0.5})
+
+        # plt.scatter(ps, probs, label='All', s=2)
+        # plt.ylabel('Probability Correct')
+        # plt.xlabel('Perturbation Size')
 
         plt.savefig(args.plot, bbox_inches='tight')
         plt.clf()
