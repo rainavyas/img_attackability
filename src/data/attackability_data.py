@@ -5,25 +5,44 @@ from sklearn.model_selection import train_test_split
 from .data_selector import data_sel
 
 
-def data_attack_sel(name, root, pert_paths, thresh=0.2, val=0.2, use_val=True, only_correct=False, preds=None):
+def data_attack_sel(name, root, pert_paths, thresh=0.2, val=0.2, use_val=True, only_correct=False, preds=None, spec=False, vspec=False):
     '''
     For a single sample:
         if ALL model perturbations are smaller than threshold => attackable -> label 1
         Otherwise -> label 0 (unattackable samples).
+
+        If spec: 
+        if mulitple models passed in pert_paths, last model is target. Return attackable sample only if attackable for target, but not universally attackable for all models.
+
+        If vspec:
+        if mulitple models passed in perts, last model is target. Label attackable sample only if attackable for target ONLY - no other models.
     '''
     ps = [torch.load(p) for p in pert_paths]
 
     attackability_labels = []
     for sample in zip(*ps):
-        smaller = True
+        num_attackable = 0
         for pert in sample:
-            if pert > thresh:
-                smaller = False
-                break
-        if smaller:
-            attackability_labels.append(1)
+            if pert <= thresh:
+                num_attackable += 1
+
+        if spec:
+            if num_attackable == len(sample) or sample[-1] > thresh:
+                attackability_labels.append(0)
+            else:
+                attackability_labels.append(1)
+        elif vspec:
+            if num_attackable == 1 and sample[-1] <= thresh:
+                attackability_labels.append(1)
+            else:
+                attackability_labels.append(0)
         else:
-            attackability_labels.append(0)
+            # find universally attackable samples
+            if num_attackable == len(sample):
+                attackability_labels.append(1)
+            else:
+                attackability_labels.append(0)
+
     
     if use_val:
         _, ds = data_sel(name, root, train=True)

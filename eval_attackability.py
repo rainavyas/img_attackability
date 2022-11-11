@@ -11,6 +11,7 @@ import argparse
 from sklearn.metrics import precision_recall_curve
 import seaborn as sns
 import matplotlib.pyplot as plt
+import numpy as np
 
 from src.tools.tools import get_default_device, get_best_f_score
 from src.models.model_selector import model_sel
@@ -22,8 +23,8 @@ if __name__ == "__main__":
 
     # Get command line arguments
     commandLineParser = argparse.ArgumentParser()
-    commandLineParser.add_argument('--model_path', type=str, required=True, help='Specify trained attackability model')
-    commandLineParser.add_argument('--model_name', type=str, required=True, help='e.g. vgg16')
+    commandLineParser.add_argument('--model_paths', type=str, nargs='+', required=True, help='Specify trained attackability models, list if ensemble')
+    commandLineParser.add_argument('--model_names', type=str, nargs='+', required=True, help='e.g. vgg16, list multiple if ensemble of detectors')
     commandLineParser.add_argument('--data_name', type=str, required=True, help='e.g. cifar10')
     commandLineParser.add_argument('--data_dir_path', type=str, required=True, help='path to data directory, e.g. data')
     commandLineParser.add_argument('--perts', type=str, required=True, nargs='+', help='paths to perturbations')
@@ -34,7 +35,10 @@ if __name__ == "__main__":
     commandLineParser.add_argument('--unattackable', action='store_true', help='pr curve for unattackable sample')
     commandLineParser.add_argument('--only_correct', action='store_true', help='filter to only eval with correctly classified samples')
     commandLineParser.add_argument('--preds', type=str, default='', nargs='+', help='If only_correct, pass paths to saved model predictions')
-    commandLineParser.add_argument('--trained_model_path', type=str, default='', help='path to trained model for embedding linear classifier')
+    commandLineParser.add_argument('--trained_model_paths', type=str, nargs='+', default='', help='paths to trained models for embedding linear classifiers')
+    commandLineParser.add_argument('--spec', action='store_true', help='if mulitple models passed in perts, last model is target. Label attackable sample only if attackable for target, but not universally.')
+    commandLineParser.add_argument('--vspec', action='store_true', help='if mulitple models passed in perts, last model is target. Label attackable sample only if attackable for target ONLY - no other model.')
+    commandLineParser.add_argument('--pr_save_path', type=str, default='', help='path to save raw pr values for later plotting')
     args = commandLineParser.parse_args()
 
     # Save the command run
@@ -50,26 +54,44 @@ if __name__ == "__main__":
         device = get_default_device()
 
     # Load the attacked test data
-    ds = data_attack_sel(args.data_name, args.data_dir_path, args.perts, thresh=args.thresh, use_val=False, only_correct=args.only_correct, preds=args.preds)
-    dl = torch.utils.data.DataLoader(ds, batch_size=args.bs)
-    if 'linear' in args.model_name:
-        # Get embeddings
-        trained_model_name = args.model_name.split('-')[-1]
-        dl, num_feats = model_embed(dl, trained_model_name, args.trained_model_path, device, bs=args.bs, shuffle=True)
+    ds = data_attack_sel(args.data_name, args.data_dir_path, args.perts, thresh=args.thresh, use_val=False, only_correct=args.only_correct, preds=args.preds, spec=args.spec, vspec=args.vspec)
+    base_dl = torch.utils.data.DataLoader(ds, batch_size=args.bs)
 
-    # Load model
-    if 'linear' in args.model_name:
-        model = model_sel('linear', model_path=args.model_path, num_classes=2, size=num_feats)
-    else:
-        model = model_sel(args.model_name, model_path=args.model_path, num_classes=2)
-    model.to(device)
+    dls = []
+    num_featss = []
+    for mname, mpath in zip(args.model_names, args.trained_model_paths):
+        if 'linear' in mname or 'fcn' in mname:
+            # Get embeddings per model
+            trained_model_name = mname.split('-')[-1]
+            dl, num_feats = model_embed(base_dl, trained_model_name, mpath, device, bs=args.bs, shuffle=False)
+            dls.append(dl)
+            num_featss.append(num_feats)
+        else:
+            dls.append(base_dl)
+            num_featss.append(0)
 
-    # Get probability predictions
+    # Load models
+    models = []
+    for mname, mpath, n in zip(args.model_names, args.model_paths, num_featss):
+        if 'linear' in mname:
+            model = model_sel('linear', model_path=mpath, num_classes=2, size=n)
+        elif 'fcn' in mname:
+            model = model_sel('fcn', model_path=mpath, num_classes=2, size=n)
+        else:
+            model = model_sel(mname, model_path=mpath, num_classes=2)
+        model.to(device)
+        models.append(model)
+
+    # Get ensemble probability predictions
     criterion = nn.CrossEntropyLoss().to(device)
-    logits, labels = Trainer.eval(dl, model, criterion, device, return_logits=True)
     s = torch.nn.Softmax(dim=1)
-    probs = s(logits)[:,1].squeeze(dim=-1).detach().cpu().tolist()
-    labels = labels.detach().cpu().tolist()
+    all_probs = []
+    for dl, model in zip(dls, models):
+        logits, labels = Trainer.eval(dl, model, criterion, device, return_logits=True)   
+        probs = s(logits)
+        all_probs.append(probs)
+        labels = labels.detach().cpu().tolist()
+    probs = torch.mean(torch.stack(all_probs), dim=0)[:,1].squeeze(dim=-1).detach().cpu().tolist()
 
     if args.unattackable:
         probs = [1-p for p in probs]
@@ -83,9 +105,9 @@ if __name__ == "__main__":
     print('Best F1', best_f1)
 
     # plot all the data
-    out_file = f'{args.plot_dir}/unattackability_{args.unattackable}_thresh{args.thresh}_{args.model_name}_{args.data_name}.png'
+    out_file = f'{args.plot_dir}/unattackability_{args.unattackable}_thresh{args.thresh}_{args.model_names[0]}_{args.data_name}.png'
     if args.only_correct:
-        out_file = f'{args.plot_dir}/unattackability_{args.unattackable}_thresh{args.thresh}_{args.model_name}_{args.data_name}_only-correct.png'
+        out_file = f'{args.plot_dir}/unattackability_{args.unattackable}_thresh{args.thresh}_{args.model_names[0]}_{args.data_name}_only-correct.png'
     sns.set_style("darkgrid")
     plt.plot(recall, precision, 'r-')
     plt.plot(best_recall,best_precision,'bo')
@@ -93,4 +115,7 @@ if __name__ == "__main__":
     plt.xlabel('Recall')
     plt.ylabel('Precision')
     plt.savefig(out_file, bbox_inches='tight')
+
+    if args.pr_save_path != '':
+        np.savez(args.pr_save_path, precision=np.asarray(precision), recall=np.asarray(recall))
 

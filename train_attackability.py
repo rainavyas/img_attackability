@@ -2,6 +2,7 @@
 Train system to detect attackable samples
 
 Note, model_name: linear-vgg16 means we train a linear classifier on top of vgg16 embedding layer
+                  fcn-vgg16 means we train a fully connected classifier on top of vgg16 embedding layer
 '''
 
 import torch
@@ -60,7 +61,7 @@ if __name__ == "__main__":
     train_ds, val_ds = data_attack_sel(args.data_name, args.data_dir_path, args.perts, thresh=args.thresh, only_correct=args.only_correct, preds=args.preds)
     train_dl = torch.utils.data.DataLoader(train_ds, batch_size=args.bs, shuffle=True)
     val_dl = torch.utils.data.DataLoader(val_ds, batch_size=args.bs, shuffle=False)
-    if 'linear' in args.model_name:
+    if 'linear' in args.model_name or 'fcn' in args.model_name:
         # Get embeddings
         trained_model_name = args.model_name.split('-')[-1]
         train_dl, num_feats = model_embed(train_dl, trained_model_name, args.trained_model_path, device, bs=args.bs, shuffle=True)
@@ -69,6 +70,8 @@ if __name__ == "__main__":
     # Initialise model
     if 'linear' in args.model_name:
         model = model_sel('linear', num_classes=2, size=num_feats)
+    elif 'fcn' in args.model_name:
+        model = model_sel('fcn', num_classes=2, size=num_feats)
     else:
         model = model_sel(args.model_name, num_classes=2)
     model.to(device)
