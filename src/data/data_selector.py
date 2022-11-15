@@ -22,18 +22,35 @@ def data_sel(name, root, train=True, val=0.2):
                         std=[0.2023, 0.1994, 0.2010], 
                         ),
                     ]), download=True)
+
+    elif name == 'cifar100':
+        ds = datasets.CIFAR100(root=root, train=True, transform=transforms.Compose([
+                    torchvision.transforms.ToTensor(),
+                    torchvision.transforms.Normalize(
+                        mean=[0.5071, 0.4865, 0.4409],
+                        std=[0.2009, 0.1984, 0.2023], 
+                        ),
+                    ]), download=True)
         
-        if train:
-            num_val = int(val*len(ds))
-            train_indices, val_indices = train_test_split(range(len(ds)), test_size=num_val, random_state=42)
+        test_ds = datasets.CIFAR100(root=root, train=False, transform=transforms.Compose([
+                    torchvision.transforms.ToTensor(),
+                    torchvision.transforms.Normalize(
+                        mean=[0.5071, 0.4865, 0.4409],
+                        std=[0.2009, 0.1984, 0.2023], 
+                        ),
+                    ]), download=True)
+        
+    if train:
+        num_val = int(val*len(ds))
+        train_indices, val_indices = train_test_split(range(len(ds)), test_size=num_val, random_state=42)
 
-            # generate subset based on indices
-            train_ds = Subset(ds, train_indices)
-            val_ds = Subset(ds, val_indices)
-                            
-            return train_ds, val_ds
+        # generate subset based on indices
+        train_ds = Subset(ds, train_indices)
+        val_ds = Subset(ds, val_indices)
+                        
+        return train_ds, val_ds
 
-        return test_ds
+    return test_ds
 
 
         
