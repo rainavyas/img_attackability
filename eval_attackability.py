@@ -36,6 +36,7 @@ if __name__ == "__main__":
     commandLineParser.add_argument('--only_correct', action='store_true', help='filter to only eval with correctly classified samples')
     commandLineParser.add_argument('--preds', type=str, default='', nargs='+', help='If only_correct, pass paths to saved model predictions')
     commandLineParser.add_argument('--trained_model_paths', type=str, nargs='+', default='', help='paths to trained models for embedding linear classifiers')
+    commandLineParser.add_argument('--num_classes', type=int, default=10, help="Specify number of classes in data for trained_model_paths")
     commandLineParser.add_argument('--spec', action='store_true', help='if mulitple models passed in perts, last model is target. Label attackable sample only if attackable for target, but not universally.')
     commandLineParser.add_argument('--vspec', action='store_true', help='if mulitple models passed in perts, last model is target. Label attackable sample only if attackable for target ONLY - no other model.')
     commandLineParser.add_argument('--pr_save_path', type=str, default='', help='path to save raw pr values for later plotting')
@@ -63,7 +64,7 @@ if __name__ == "__main__":
         if 'linear' in mname or 'fcn' in mname:
             # Get embeddings per model
             trained_model_name = mname.split('-')[-1]
-            dl, num_feats = model_embed(base_dl, trained_model_name, mpath, device, bs=args.bs, shuffle=False)
+            dl, num_feats = model_embed(base_dl, trained_model_name, mpath, device, bs=args.bs, shuffle=False, num_classes=args.num_classes)
             dls.append(dl)
             num_featss.append(num_feats)
         else:

@@ -16,6 +16,7 @@ if __name__ == "__main__":
     commandLineParser.add_argument('--model_name', type=str, required=True, help='e.g. vgg16')
     commandLineParser.add_argument('--data_name', type=str, required=True, help='e.g. cifar10')
     commandLineParser.add_argument('--data_dir_path', type=str, required=True, help='path to data directory, e.g. data')
+    commandLineParser.add_argument('--num_classes', type=int, default=10, help="Specify number of classes in data")
     commandLineParser.add_argument('--bs', type=int, default=64, help="Specify batch size")
     commandLineParser.add_argument('--epochs', type=int, default=200, help="Specify max epochs")
     commandLineParser.add_argument('--lr', type=float, default=0.001, help="Specify learning rate")
@@ -47,7 +48,7 @@ if __name__ == "__main__":
     val_dl = torch.utils.data.DataLoader(val_ds, batch_size=args.bs, shuffle=False)
 
     # Initialise model
-    model = model_sel(args.model_name)
+    model = model_sel(args.model_name, num_classes=args.num_classes)
     model.to(device)
 
     # Define learning objects

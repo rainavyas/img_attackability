@@ -4,9 +4,9 @@ import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader, TensorDataset
 
-def model_embed(dl, model_name, model_path, device, bs=64, shuffle=False):
+def model_embed(dl, model_name, model_path, device, bs=64, shuffle=False, num_classes=10):
 
-    model = model_sel(model_name=model_name, model_path=model_path)
+    model = model_sel(model_name=model_name, model_path=model_path, num_classes=num_classes)
     model.eval()
     model.to(device)
 
