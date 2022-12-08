@@ -27,6 +27,7 @@ if __name__ == "__main__":
     commandLineParser.add_argument('--bs', type=int, default=64, help="Specify batch size")
     commandLineParser.add_argument('--force_cpu', action='store_true', help='force cpu use')
     commandLineParser.add_argument('--use_val', action='store_true', help='use validation data or test data for predictions')
+    commandLineParser.add_argument('--bearpaw', action='store_true', help='use bearpaw model configuration')
     args = commandLineParser.parse_args()
 
     # Save the command run
@@ -49,7 +50,7 @@ if __name__ == "__main__":
     dl = torch.utils.data.DataLoader(ds, batch_size=args.bs)
 
     # Load model
-    model = model_sel(args.model_name, model_path=args.model_path, num_classes=args.num_classes)
+    model = model_sel(args.model_name, model_path=args.model_path, num_classes=args.num_classes, bearpaw=args.bearpaw)
     model.to(device)
 
     # Get probability predictions

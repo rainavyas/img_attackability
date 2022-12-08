@@ -100,7 +100,7 @@ if __name__ == "__main__":
     if args.pert_v_corr:
         '''
         Scatter plot of
-            probabaility of being correct 
+            probability of being correct 
             vs
             perturbation size
         '''

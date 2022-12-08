@@ -37,6 +37,7 @@ if __name__ == "__main__":
     commandLineParser.add_argument('--preds', type=str, default='', nargs='+', help='If only_correct, pass paths to saved model predictions')
     commandLineParser.add_argument('--trained_model_paths', type=str, nargs='+', default='', help='paths to trained models for embedding linear classifiers')
     commandLineParser.add_argument('--num_classes', type=int, default=10, help="Specify number of classes in data for trained_model_paths")
+    commandLineParser.add_argument('--bearpaw', action='store_true', help='use bearpaw model configuration for the trained_model')
     commandLineParser.add_argument('--spec', action='store_true', help='if mulitple models passed in perts, last model is target. Label attackable sample only if attackable for target, but not universally.')
     commandLineParser.add_argument('--vspec', action='store_true', help='if mulitple models passed in perts, last model is target. Label attackable sample only if attackable for target ONLY - no other model.')
     commandLineParser.add_argument('--pr_save_path', type=str, default='', help='path to save raw pr values for later plotting')
@@ -64,7 +65,7 @@ if __name__ == "__main__":
         if 'linear' in mname or 'fcn' in mname:
             # Get embeddings per model
             trained_model_name = mname.split('-')[-1]
-            dl, num_feats = model_embed(base_dl, trained_model_name, mpath, device, bs=args.bs, shuffle=False, num_classes=args.num_classes)
+            dl, num_feats = model_embed(base_dl, trained_model_name, mpath, device, bs=args.bs, shuffle=False, num_classes=args.num_classes, bearpaw=args.bearpaw)
             dls.append(dl)
             num_featss.append(num_feats)
         else:
@@ -105,17 +106,17 @@ if __name__ == "__main__":
     best_precision, best_recall, best_f1 =  get_best_f_score(precision, recall)
     print('Best F1', best_f1)
 
-    # plot all the data
-    out_file = f'{args.plot_dir}/unattackability_{args.unattackable}_thresh{args.thresh}_{args.model_names[0]}_{args.data_name}.png'
-    if args.only_correct:
-        out_file = f'{args.plot_dir}/unattackability_{args.unattackable}_thresh{args.thresh}_{args.model_names[0]}_{args.data_name}_only-correct.png'
-    sns.set_style("darkgrid")
-    plt.plot(recall, precision, 'r-')
-    plt.plot(best_recall,best_precision,'bo')
-    plt.annotate(F"F1={best_f1:.2f}", (best_recall,best_precision))
-    plt.xlabel('Recall')
-    plt.ylabel('Precision')
-    plt.savefig(out_file, bbox_inches='tight')
+    # # plot all the data
+    # out_file = f'{args.plot_dir}/unattackability_{args.unattackable}_thresh{args.thresh}_{args.model_names[0]}_{args.data_name}.png'
+    # if args.only_correct:
+    #     out_file = f'{args.plot_dir}/unattackability_{args.unattackable}_thresh{args.thresh}_{args.model_names[0]}_{args.data_name}_only-correct.png'
+    # sns.set_style("darkgrid")
+    # plt.plot(recall, precision, 'r-')
+    # plt.plot(best_recall,best_precision,'bo')
+    # plt.annotate(F"F1={best_f1:.2f}", (best_recall,best_precision))
+    # plt.xlabel('Recall')
+    # plt.ylabel('Precision')
+    # plt.savefig(out_file, bbox_inches='tight')
 
     if args.pr_save_path != '':
         np.savez(args.pr_save_path, precision=np.asarray(precision), recall=np.asarray(recall))

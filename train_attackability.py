@@ -35,8 +35,11 @@ if __name__ == "__main__":
     commandLineParser.add_argument('--seed', type=int, default=1, help="Specify seed")
     commandLineParser.add_argument('--force_cpu', action='store_true', help='force cpu use')
     commandLineParser.add_argument('--only_correct', action='store_true', help='filter to only train with correctly classified samples')
+    commandLineParser.add_argument('--unattackable', action='store_true', help='train to identify unattackable samples')
     commandLineParser.add_argument('--preds', type=str, default='', nargs='+', help='If only_correct, pass paths to saved model predictions')
     commandLineParser.add_argument('--trained_model_path', type=str, default='', help='path to trained model for embedding linear classifier')
+    commandLineParser.add_argument('--num_classes', type=int, default=10, help="Specify number of classes in data for trained_model")
+    commandLineParser.add_argument('--bearpaw', action='store_true', help='use bearpaw model configuration for the trained_model')
     args = commandLineParser.parse_args()
 
     set_seeds(args.seed)
@@ -58,14 +61,14 @@ if __name__ == "__main__":
         device = get_default_device()
 
     # Load the training data
-    train_ds, val_ds = data_attack_sel(args.data_name, args.data_dir_path, args.perts, thresh=args.thresh, only_correct=args.only_correct, preds=args.preds)
+    train_ds, val_ds = data_attack_sel(args.data_name, args.data_dir_path, args.perts, thresh=args.thresh, only_correct=args.only_correct, preds=args.preds, unattackable=args.unattackable)
     train_dl = torch.utils.data.DataLoader(train_ds, batch_size=args.bs, shuffle=True)
     val_dl = torch.utils.data.DataLoader(val_ds, batch_size=args.bs, shuffle=False)
     if 'linear' in args.model_name or 'fcn' in args.model_name:
         # Get embeddings
         trained_model_name = args.model_name.split('-')[-1]
-        train_dl, num_feats = model_embed(train_dl, trained_model_name, args.trained_model_path, device, bs=args.bs, shuffle=True)
-        val_dl, _ = model_embed(val_dl, trained_model_name, args.trained_model_path, device, bs=args.bs, shuffle=False)
+        train_dl, num_feats = model_embed(train_dl, trained_model_name, args.trained_model_path, device, bs=args.bs, shuffle=True, num_classes=args.num_classes, bearpaw=args.bearpaw)
+        val_dl, _ = model_embed(val_dl, trained_model_name, args.trained_model_path, device, bs=args.bs, shuffle=False, num_classes=args.num_classes, bearpaw=args.bearpaw)
 
     # Initialise model
     if 'linear' in args.model_name:

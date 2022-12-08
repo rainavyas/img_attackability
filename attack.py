@@ -21,6 +21,7 @@ if __name__ == "__main__":
     commandLineParser.add_argument('--num_classes', type=int, default=10, help="Specify number of classes in data")
     commandLineParser.add_argument('--force_cpu', action='store_true', help='force cpu use')
     commandLineParser.add_argument('--val', action='store_true', help='apply attack to validation data')
+    commandLineParser.add_argument('--bearpaw', action='store_true', help='use bearpaw model configuration')
     args = commandLineParser.parse_args()
 
     # Save the command run
@@ -42,7 +43,7 @@ if __name__ == "__main__":
         _, ds = data_sel(args.data_name, args.data_dir_path, train=True)
 
     # Load model
-    model = model_sel(args.model_name, model_path=args.model_path, num_classes=args.num_classes)
+    model = model_sel(args.model_name, model_path=args.model_path, num_classes=args.num_classes, bearpaw=args.bearpaw)
     model.to(device)
 
     # Get minimum perturbation sizes per sample

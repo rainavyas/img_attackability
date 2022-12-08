@@ -25,6 +25,7 @@ if __name__ == "__main__":
     commandLineParser.add_argument('--sch', type=int, default=[100, 150], nargs='+', help="Specify scheduler cycle")
     commandLineParser.add_argument('--seed', type=int, default=1, help="Specify seed")
     commandLineParser.add_argument('--force_cpu', action='store_true', help='force cpu use')
+    commandLineParser.add_argument('--bearpaw', action='store_true', help='use bearpaw model configuration')
     args = commandLineParser.parse_args()
 
     set_seeds(args.seed)
@@ -48,7 +49,7 @@ if __name__ == "__main__":
     val_dl = torch.utils.data.DataLoader(val_ds, batch_size=args.bs, shuffle=False)
 
     # Initialise model
-    model = model_sel(args.model_name, num_classes=args.num_classes)
+    model = model_sel(args.model_name, num_classes=args.num_classes, bearpaw=args.bearpaw)
     model.to(device)
 
     # Define learning objects
