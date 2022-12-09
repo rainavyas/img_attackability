@@ -22,9 +22,9 @@ def data_attack_sel(name, root, pert_paths, thresh=0.2, val=0.2, use_val=True, o
     ps = [torch.load(p) for p in pert_paths]
 
     if unattackable:
-        attackability_labels = unattackable_labels(ps, thresh, spec=False, vspec=False)
+        attackability_labels = unattackable_labels(ps, thresh, spec=spec, vspec=vspec)
     else:
-        attackability_labels = attackable_labels(ps, thresh, spec=False, vspec=False)
+        attackability_labels = attackable_labels(ps, thresh, spec=spec, vspec=vspec)
     
     if use_val:
         _, ds = data_sel(name, root, train=True)

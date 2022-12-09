@@ -32,7 +32,7 @@ if __name__ == "__main__":
     commandLineParser.add_argument('--thresh', type=float, default=0.2, help="Specify imperceptibility threshold")
     commandLineParser.add_argument('--bs', type=int, default=64, help="Specify batch size")
     commandLineParser.add_argument('--force_cpu', action='store_true', help='force cpu use')
-    commandLineParser.add_argument('--unattackable', action='store_true', help='pr curve for unattackable sample')
+    commandLineParser.add_argument('--unattackable', action='store_true', help='detector trained to detect unattackable samples')
     commandLineParser.add_argument('--only_correct', action='store_true', help='filter to only eval with correctly classified samples')
     commandLineParser.add_argument('--preds', type=str, default='', nargs='+', help='If only_correct, pass paths to saved model predictions')
     commandLineParser.add_argument('--trained_model_paths', type=str, nargs='+', default='', help='paths to trained models for embedding linear classifiers')
@@ -56,7 +56,7 @@ if __name__ == "__main__":
         device = get_default_device()
 
     # Load the attacked test data
-    ds = data_attack_sel(args.data_name, args.data_dir_path, args.perts, thresh=args.thresh, use_val=False, only_correct=args.only_correct, preds=args.preds, spec=args.spec, vspec=args.vspec)
+    ds = data_attack_sel(args.data_name, args.data_dir_path, args.perts, thresh=args.thresh, use_val=False, only_correct=args.only_correct, preds=args.preds, spec=args.spec, vspec=args.vspec, unattackable=args.unattackable)
     base_dl = torch.utils.data.DataLoader(ds, batch_size=args.bs)
 
     dls = []
@@ -94,10 +94,6 @@ if __name__ == "__main__":
         all_probs.append(probs)
         labels = labels.detach().cpu().tolist()
     probs = torch.mean(torch.stack(all_probs), dim=0)[:,1].squeeze(dim=-1).detach().cpu().tolist()
-
-    if args.unattackable:
-        probs = [1-p for p in probs]
-        labels = [1-l for l in labels]
 
     # Get precision-recall curves
     precision, recall, _ = precision_recall_curve(labels, probs)
