@@ -36,7 +36,7 @@ if __name__ == "__main__":
         # Visualize the class distribution for the (un)attackable samples
 
         # Load the attacked test data
-        _, ds = data_attack_sel(args.data_name, args.data_dir_path, args.perts, thresh=args.thresh, use_val=True, val=1.0, unattackable=args.unattackable)
+        _, ds = data_attack_sel(args.data_name, args.data_dir_path, args.perts, thresh=args.thresh, use_val=True, val=1.0, unattackable=args.unattackable, ret_labels=False)
 
         # Get class distribution over positive labels
         class_count_dict = defaultdict(int)
