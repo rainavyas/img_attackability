@@ -5,7 +5,7 @@ from sklearn.model_selection import train_test_split
 from .data_selector import data_sel
 
 
-def data_attack_sel(name, root, pert_paths, thresh=0.2, val=0.2, use_val=True, only_correct=False, preds=None, spec=False, vspec=False, unattackable=False):
+def data_attack_sel(name, root, pert_paths, thresh=0.2, val=0.2, use_val=True, only_correct=False, preds=None, spec=False, vspec=False, unattackable=False, ret_labels=False):
     '''
     For a single sample:
         if ALL model perturbations are smaller than threshold => attackable -> label 1
@@ -38,29 +38,33 @@ def data_attack_sel(name, root, pert_paths, thresh=0.2, val=0.2, use_val=True, o
         labels.append(l)
 
 
-    if only_correct:
-        # filter to keep only samples correctly classified by ALL models
-        preds = [torch.load(p) for p in preds]
-        kept_xs = []
-        kept_attackability_labels = []
-        for sample in zip(xs, attackability_labels, labels, *preds):
-            l = sample[2]
-            correct = True
-            for pred in sample[3:]:
-                pred_ind = torch.argmax(pred).item()
-                if pred_ind != l:
-                    correct = False
-                    break
-            if correct:
-                kept_xs.append(sample[0])
-                kept_attackability_labels.append(sample[1])
+    # if only_correct:
+    #     # filter to keep only samples correctly classified by ALL models
+    #     preds = [torch.load(p) for p in preds]
+    #     kept_xs = []
+    #     kept_attackability_labels = []
+    #     for sample in zip(xs, attackability_labels, labels, *preds):
+    #         l = sample[2]
+    #         correct = True
+    #         for pred in sample[3:]:
+    #             pred_ind = torch.argmax(pred).item()
+    #             if pred_ind != l:
+    #                 correct = False
+    #                 break
+    #         if correct:
+    #             kept_xs.append(sample[0])
+    #             kept_attackability_labels.append(sample[1])
         
-        xs = kept_xs
-        attackability_labels = kept_attackability_labels
+    #     xs = kept_xs
+    #     attackability_labels = kept_attackability_labels
         
     xs = torch.stack(xs, dim=0)
+    labels = torch.longTensor(labels)
     attackability_labels = torch.LongTensor(attackability_labels)
-    ds = TensorDataset(xs, attackability_labels)
+    if ret_labels:
+        ds = TensorDataset(xs, attackability_labels, labels)
+    else:
+        ds = TensorDataset(xs, attackability_labels)
 
     if use_val:
         # split into train and validation
