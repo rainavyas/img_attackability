@@ -5,7 +5,7 @@ from sklearn.model_selection import train_test_split
 from .data_selector import data_sel
 
 
-def data_attack_sel(name, root, pert_paths, thresh=0.2, val=0.2, use_val=True, only_correct=False, preds=None, spec=False, vspec=False, unattackable=False, ret_labels=False):
+def data_attack_sel(name, root, pert_paths, thresh=0.2, val=0.2, use_val=True, val_for_train=True, only_correct=False, preds=None, spec=False, vspec=False, unattackable=False, ret_labels=False):
     '''
     For a single sample:
         if ALL model perturbations are smaller than threshold => attackable -> label 1
@@ -59,14 +59,14 @@ def data_attack_sel(name, root, pert_paths, thresh=0.2, val=0.2, use_val=True, o
     #     attackability_labels = kept_attackability_labels
         
     xs = torch.stack(xs, dim=0)
-    labels = torch.longTensor(labels)
+    labels = torch.LongTensor(labels)
     attackability_labels = torch.LongTensor(attackability_labels)
     if ret_labels:
         ds = TensorDataset(xs, attackability_labels, labels)
     else:
         ds = TensorDataset(xs, attackability_labels)
 
-    if use_val:
+    if val_for_train:
         # split into train and validation
         num_val = int(val*len(ds))
         train_indices, val_indices = train_test_split(range(len(ds)), test_size=num_val, random_state=42)
