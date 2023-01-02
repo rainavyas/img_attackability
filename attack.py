@@ -22,6 +22,7 @@ if __name__ == "__main__":
     commandLineParser.add_argument('--force_cpu', action='store_true', help='force cpu use')
     commandLineParser.add_argument('--val', action='store_true', help='apply attack to validation data')
     commandLineParser.add_argument('--bearpaw', action='store_true', help='use bearpaw model configuration')
+    commandLineParser.add_argument('--attack_method', type=str, default='fgsm', help="Specify attack method")
     args = commandLineParser.parse_args()
 
     # Save the command run
@@ -47,7 +48,7 @@ if __name__ == "__main__":
     model.to(device)
 
     # Get minimum perturbation sizes per sample
-    perts = Attacker.get_all_pert_sizes(ds, model, device)
+    perts = Attacker.get_all_pert_sizes(ds, model, device, method=args.attack_method)
     perts = torch.Tensor(perts)
 
     # Report mean and standard deviation

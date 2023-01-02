@@ -1,6 +1,7 @@
 import torch
 import numpy as np
 from itertools import product
+from tqdm import tqdm
 
 class Attacker():
     @staticmethod
@@ -21,6 +22,7 @@ class Attacker():
         loss = -1*torch.log(y_pred[y])
         loss.backward()
         direction = x.grad
+        x.requires_grad = False
         return y_pred.squeeze(0).cpu().detach(), direction.cpu().detach(),
 
     @staticmethod
@@ -36,6 +38,26 @@ class Attacker():
             return False
         else:
             return True
+
+    @staticmethod
+    def can_pgd(model, x, y_pred, gradient, delta, device, num_iter=5):
+        '''Return True if pgd attack successful within constraint (l_inf norm)'''
+        model.eval()
+        x = x.to(device)
+        x_attack = x.clone()
+        for _ in range(num_iter):
+            gradient = torch.sign(gradient) * delta # force gradient to be a fixed size in l-inf norm
+            gradient = gradient.to(device)
+            x_attack += gradient
+            x_attack =  torch.max(torch.min(x_attack, x+delta), x-delta) # project back into l-inf ball
+            with torch.no_grad():
+                y_pred_attack = model(torch.unsqueeze(x_attack, 0)).squeeze(0)
+            if torch.argmax(y_pred).item() != torch.argmax(y_pred_attack).item():
+                return True
+            _, gradient = Attacker.gradient(model, x_attack, None, device)
+        return False
+        
+
     
     @classmethod
     def get_pert_size(cls, x, y, model, device, method='fgsm', min_size=0.002, max_size=0.4, num=200):
@@ -43,6 +65,7 @@ class Attacker():
         Find smallest perturbation size required to change prediction of model for sample x
         If all sizes fail, returns max_size
         '''
+        method_func = getattr(cls, f'can_{method}')
         y_pred, direction = cls.gradient(model, x, y, device)
 
         # binary search for smallest perturbation size
@@ -51,12 +74,12 @@ class Attacker():
         r = len(deltas) - 1
         while r-l>0:
             if r-l == 1:
-                if cls.can_fgsm(model, x, y_pred, direction, deltas[l], device):
+                if method_func(model, x, y_pred, direction, deltas[l], device):
                     return deltas[l]
                 else:
                     return deltas[r]
             mid = int((r+l)/2)
-            if cls.can_fgsm(model, x, y_pred, direction, deltas[mid], device):
+            if method_func(model, x, y_pred, direction, deltas[mid], device):
                  r = mid
             else:
                 l = mid
@@ -69,8 +92,7 @@ class Attacker():
         Calculate smallest perturbation for adv attack per sample
         '''
         min_perts = []
-        for i in range(len(ds)):
-            print(f'On attack {i}/{len(ds)}')
+        for i in tqdm(range(len(ds))):
             (x, y) = ds[i]
             min_perts.append(cls.get_pert_size(x, y, model, device, method=method, min_size=min_size, max_size=max_size, num=num))
         return min_perts
