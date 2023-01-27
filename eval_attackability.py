@@ -41,6 +41,7 @@ if __name__ == "__main__":
     commandLineParser.add_argument('--spec', action='store_true', help='if mulitple models passed in perts, last model is target. Label attackable sample only if attackable for target, but not universally.')
     commandLineParser.add_argument('--vspec', action='store_true', help='if mulitple models passed in perts, last model is target. Label attackable sample only if attackable for target ONLY - no other model.')
     commandLineParser.add_argument('--pr_save_path', type=str, default='', help='path to save raw pr values for later plotting')
+    commandLineParser.add_argument('--combination', type=str, default='sum', choices=['sum', 'product'], help="method to combine ensemble of detector probabilities")
     args = commandLineParser.parse_args()
 
     # Save the command run
@@ -56,7 +57,7 @@ if __name__ == "__main__":
         device = get_default_device()
 
     # Load the attacked test data
-    ds = data_attack_sel(args.data_name, args.data_dir_path, args.perts, thresh=args.thresh, use_val=False, only_correct=args.only_correct, preds=args.preds, spec=args.spec, vspec=args.vspec, unattackable=args.unattackable)
+    ds = data_attack_sel(args.data_name, args.data_dir_path, args.perts, thresh=args.thresh, use_val=False, val_for_train=False, only_correct=args.only_correct, preds=args.preds, spec=args.spec, vspec=args.vspec, unattackable=args.unattackable)
     base_dl = torch.utils.data.DataLoader(ds, batch_size=args.bs)
 
     dls = []
@@ -93,7 +94,10 @@ if __name__ == "__main__":
         probs = s(logits)
         all_probs.append(probs)
         labels = labels.detach().cpu().tolist()
-    probs = torch.mean(torch.stack(all_probs), dim=0)[:,1].squeeze(dim=-1).detach().cpu().tolist()
+    if args.combination == 'sum':
+        probs = torch.mean(torch.stack(all_probs), dim=0)[:,1].squeeze(dim=-1).detach().cpu().tolist()
+    elif args.combination == 'product':
+        probs = torch.prod(torch.stack(all_probs), dim=0)[:,1].squeeze(dim=-1).detach().cpu().tolist()
 
     # Get precision-recall curves
     precision, recall, _ = precision_recall_curve(labels, probs)

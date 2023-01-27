@@ -40,7 +40,7 @@ if __name__ == "__main__":
         f.write(' '.join(sys.argv)+'\n')
 
     # Load the attacked test data labels
-    ds = data_attack_sel(args.data_name, args.data_dir_path, args.perts, thresh=args.thresh, use_val=False, spec=args.spec, vspec=args.vspec, unattackable=args.unattackable)
+    ds = data_attack_sel(args.data_name, args.data_dir_path, args.perts, thresh=args.thresh, use_val=False, val_for_train=False, spec=args.spec, vspec=args.vspec, unattackable=args.unattackable)
     labels = []
     for i in range(len(ds)):
         _,l = ds[i]
