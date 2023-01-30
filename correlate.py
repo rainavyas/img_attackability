@@ -89,7 +89,7 @@ if __name__ == "__main__":
             plt.plot(threshs, frac_attackable, label=name, linestyle='dashed')
 
         threshs, frac_attackable = Attacker.attack_frac_sweep_all(ps)
-        plt.plot(threshs, frac_attackable, label='All')
+        plt.plot(threshs, frac_attackable, label='uni')
         plt.ylabel('Fraction attackable')
         plt.xlabel('Imperceptibility Threshold')
         plt.legend()
