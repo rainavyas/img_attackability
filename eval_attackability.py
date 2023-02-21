@@ -14,6 +14,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from src.tools.tools import get_default_device, get_best_f_score
+from src.tools.attackability_tools import attackability_probs
 from src.models.model_selector import model_sel
 from src.data.attackability_data import data_attack_sel
 from src.training.trainer import Trainer
@@ -60,44 +61,8 @@ if __name__ == "__main__":
     ds = data_attack_sel(args.data_name, args.data_dir_path, args.perts, thresh=args.thresh, use_val=False, val_for_train=False, only_correct=args.only_correct, preds=args.preds, spec=args.spec, vspec=args.vspec, unattackable=args.unattackable)
     base_dl = torch.utils.data.DataLoader(ds, batch_size=args.bs)
 
-    dls = []
-    num_featss = []
-    for mname, mpath in zip(args.model_names, args.trained_model_paths):
-        if 'linear' in mname or 'fcn' in mname:
-            # Get embeddings per model
-            trained_model_name = mname.split('-')[-1]
-            dl, num_feats = model_embed(base_dl, trained_model_name, mpath, device, bs=args.bs, shuffle=False, num_classes=args.num_classes, bearpaw=args.bearpaw)
-            dls.append(dl)
-            num_featss.append(num_feats)
-        else:
-            dls.append(base_dl)
-            num_featss.append(0)
-
-    # Load models
-    models = []
-    for mname, mpath, n in zip(args.model_names, args.model_paths, num_featss):
-        if 'linear' in mname:
-            model = model_sel('linear', model_path=mpath, num_classes=2, size=n)
-        elif 'fcn' in mname:
-            model = model_sel('fcn', model_path=mpath, num_classes=2, size=n)
-        else:
-            model = model_sel(mname, model_path=mpath, num_classes=2)
-        model.to(device)
-        models.append(model)
-
-    # Get ensemble probability predictions
-    criterion = nn.CrossEntropyLoss().to(device)
-    s = torch.nn.Softmax(dim=1)
-    all_probs = []
-    for dl, model in zip(dls, models):
-        logits, labels = Trainer.eval(dl, model, criterion, device, return_logits=True)   
-        probs = s(logits)
-        all_probs.append(probs)
-        labels = labels.detach().cpu().tolist()
-    if args.combination == 'sum':
-        probs = torch.mean(torch.stack(all_probs), dim=0)[:,1].squeeze(dim=-1).detach().cpu().tolist()
-    elif args.combination == 'product':
-        probs = torch.prod(torch.stack(all_probs), dim=0)[:,1].squeeze(dim=-1).detach().cpu().tolist()
+    # Get probability predictions from detectors ensembled
+    probs, labels = attackability_probs(base_dl, args.model_names, args.model_paths, args.trained_model_paths, device, bs=args.bs, num_classes=args.num_classes, bearpaw=args.bearpaw, combination=args.combination)
 
     # Get precision-recall curves
     precision, recall, _ = precision_recall_curve(labels, probs)

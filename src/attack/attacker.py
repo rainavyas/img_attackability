@@ -1,7 +1,7 @@
 import torch
 import numpy as np
-from itertools import product
 from tqdm import tqdm
+from torch.utils.data import Subset, TensorDataset
 
 class Attacker():
     @staticmethod
@@ -40,7 +40,7 @@ class Attacker():
             return True
 
     @staticmethod
-    def can_pgd(model, x, y_pred, gradient, delta, device, num_iter=5):
+    def can_pgd(model, x, y_pred, gradient, delta, device, num_iter=5, ret_att=False):
         '''Return True if pgd attack successful within constraint (l_inf norm)'''
         model.eval()
         x = x.to(device)
@@ -53,8 +53,12 @@ class Attacker():
             with torch.no_grad():
                 y_pred_attack = model(torch.unsqueeze(x_attack, 0)).squeeze(0)
             if torch.argmax(y_pred).item() != torch.argmax(y_pred_attack).item():
+                if ret_att:
+                    return True, x_attack.cpu().detach()
                 return True
             _, gradient = Attacker.gradient(model, x_attack, None, device)
+        if ret_att:
+            return False, x_attack.cpu().detach()
         return False
         
 
@@ -131,6 +135,24 @@ class Attacker():
             frac_attackable.append(num_att/size)
         return threshs, frac_attackable
     
+    @classmethod
+    def attack_all(cls, ds, model, device, method='pgd', epsilon=0.03):
+        '''
+        Get adversarially attacked dataset
+        '''
+        method_func = getattr(cls, f'can_{method}')
+        x_attacks = []
+        labels = []
+        for i in tqdm(range(len(ds))):
+            (x, y) = ds[i]
+            y_pred, direction = cls.gradient(model, x, y, device)
+            _, x_attack = method_func(model, x, y_pred, direction, epsilon, device, ret_att=True)
+            labels.append(y)
+            x_attacks.append(x_attack)
+        xs = torch.stack(x_attacks, dim=0)
+        labels = torch.LongTensor(labels)
+        ds = TensorDataset(xs, labels)
+        return ds
 
 
 
