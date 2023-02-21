@@ -10,7 +10,7 @@ import argparse
 import torch
 import torch.nn as nn
 
-from src.tools.tools import get_default_device
+from src.tools.tools import get_default_device, accuracy_topk
 from src.models.model_selector import model_sel
 from src.data.data_selector import data_sel
 from src.training.trainer import Trainer
@@ -26,6 +26,7 @@ if __name__ == "__main__":
     commandLineParser.add_argument('--data_name', type=str, required=True, help='e.g. cifar10')
     commandLineParser.add_argument('--data_dir_path', type=str, required=True, help='path to data directory, e.g. data')
     commandLineParser.add_argument('--num_classes', type=int, default=10, help="Specify number of classes in data")
+    commandLineParser.add_argument('--bs', type=int, default=64, help="Specify batch size")
     commandLineParser.add_argument('--force_cpu', action='store_true', help='force cpu use')
     commandLineParser.add_argument('--bearpaw', action='store_true', help='use bearpaw model configuration')
     args = commandLineParser.parse_args()
@@ -52,14 +53,31 @@ if __name__ == "__main__":
 
     # calculate accuracy
     criterion = nn.CrossEntropyLoss().to(device)
-    acc = Trainer.eval(dl, model, criterion, device)
-    print('Accuracy (%)', acc)
+    logits, labels = Trainer.eval(dl, model, criterion, device, return_logits=True)
+    acc = accuracy_topk(logits.data, labels)
+    print('Accuracy (%)', acc.item())
 
     # calculate fooling rate
-    ds_att = Attacker.attack_all(ds, model, device, method='pgd', epsilon=0.03)
-    dl_att = torch.utils.data.DataLoader(ds, batch_size=args.bs, shuffle=True)
-    acc_att = Trainer.eval(dl_att, model, criterion, device)
 
-    fool = 100*((acc-acc_att)/acc)
+    # keep only correctly classified samples
+    y_preds = torch.argmax(logits, dim=1).tolist()
+    labels = labels.tolist()
+    xs = []
+    ys = []
+    for i, (yp, l) in enumerate(zip(y_preds, labels)):
+        if yp == l:
+            (x,y)=ds[i]
+            xs.append(x)
+            ys.append(y)
+    xs = torch.stack(xs, dim=0)
+    labels = torch.LongTensor(ys)
+    ds = torch.utils.data.TensorDataset(xs, labels)
+
+    # attack
+    ds_att = Attacker.attack_all(ds, model, device, method='pgd', epsilon=0.03)
+    dl_att = torch.utils.data.DataLoader(ds_att, batch_size=args.bs, shuffle=False)
+    acc_att_corr = Trainer.eval(dl_att, model, criterion, device)
+
+    fool = 100-acc_att_corr
     print('Fooling Rate (%)', fool)
 
