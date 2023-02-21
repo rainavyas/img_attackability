@@ -3,7 +3,7 @@ import torch.nn as nn
 import numpy as np
 
 from ..training.trainer import Trainer
-from torch.utils.data import Subset
+from torch.utils.data import Subset, TensorDataset
 from ..models.model_embedding import model_embed
 from ..models.model_selector import model_sel
 
@@ -58,7 +58,18 @@ def select_attackable_samples(ds, detector_names, detector_paths, embedding_mode
     Use a deep attackability detector to select most attackable samples
     '''
     num = int(frac*len(ds))
-    base_dl = torch.utils.data.DataLoader(ds, batch_size=bs, shuffle=False)
+    # map all labels to 0/1 to simulate binary classification of detector (this is just to make accuracy function work in eval)
+    xs = []
+    ys = [0]*len(ds)
+    for i in range(len(ds)):
+        (x, _) = ds[i]
+        xs.append(x)
+    xs = torch.stack(xs, dim=0)
+    labels = torch.LongTensor(ys)
+    temp_ds = TensorDataset(xs, labels)
+
+    # get probabilities of being attackable
+    base_dl = torch.utils.data.DataLoader(temp_ds, batch_size=bs, shuffle=False)
     probs, _ = attackability_probs(base_dl, detector_names, detector_paths, embedding_model_paths, device, bs=bs, num_classes=num_classes, bearpaw=bearpaw)
     kept_inds = np.argsort(probs)[:num]
     ds = Subset(ds, kept_inds)

@@ -15,6 +15,7 @@ from src.tools.attackability_tools import select_attackable_samples
 from src.models.model_selector import model_sel
 from src.data.data_selector import data_sel
 from src.training.trainer import Trainer
+from src.attack.attacker import Attacker
 
 
 if __name__ == "__main__":
@@ -28,7 +29,7 @@ if __name__ == "__main__":
     commandLineParser.add_argument('--data_dir_path', type=str, required=True, help='path to data directory, e.g. data')
     commandLineParser.add_argument('--num_classes', type=int, default=10, help="Specify number of classes in data")
     commandLineParser.add_argument('--bs', type=int, default=64, help="Specify batch size")
-    commandLineParser.add_argument('--epochs', type=int, default=10, help="Specify max epochs")
+    commandLineParser.add_argument('--epochs', type=int, default=2, help="Specify max epochs")
     commandLineParser.add_argument('--lr', type=float, default=0.0001, help="Specify learning rate")
     commandLineParser.add_argument('--momentum', type=float, default=0.9, help="Specify momentum")
     commandLineParser.add_argument('--weight_decay', type=float, default=1e-4, help="Specify momentum")
@@ -36,7 +37,7 @@ if __name__ == "__main__":
     commandLineParser.add_argument('--seed', type=int, default=1, help="Specify seed")
     commandLineParser.add_argument('--force_cpu', action='store_true', help='force cpu use')
     commandLineParser.add_argument('--bearpaw', action='store_true', help='use bearpaw model configuration')
-    args = commandLineParser.parse_args()
+    args, margs = commandLineParser.parse_known_args()
 
     # attackable adv training arguments
     attackParser = argparse.ArgumentParser(description='attackable adv training arguments')
@@ -46,12 +47,15 @@ if __name__ == "__main__":
     attackParser.add_argument('--model_paths', type=str, nargs='+', required=True, help='Specify trained attackability detectors, list if ensemble')
     attackParser.add_argument('--model_names', type=str, nargs='+', required=True, help='e.g. fcn-vgg16, list multiple if ensemble of detectors')
     attackParser.add_argument('--trained_model_paths', type=str, nargs='+', default='', help='paths to trained models for embedding linear classifiers')
-    att_args = attackParser.parse_args()
+    att_args, aargs = attackParser.parse_known_args()
+
+    # Making sure no unkown arguments are given
+    assert set(margs).isdisjoint(aargs), f"{set(margs) & set(aargs)}"
 
     set_seeds(args.seed)
     out_file = f'{args.out_dir}/{args.model_name}_{args.data_name}_seed{args.seed}.th'
     if att_args.rand or att_args.attackable:
-       out_file = f'{args.out_dir}/{args.model_name}_{args.data_name}_{args.frac}_seed{args.seed}.th' 
+       out_file = f'{args.out_dir}/{args.model_name}_{args.data_name}_{att_args.frac}_seed{args.seed}.th' 
 
     # Save the command run
     if not os.path.isdir('CMDs'):
@@ -71,19 +75,18 @@ if __name__ == "__main__":
     # Prune dataset to select some samples if necessary
     if att_args.rand:
         num = int(att_args.frac*len(ds))
-        indices = train_test_split(range(len(ds)), test_size=num, random_state=args.seed)
+        _, indices = train_test_split(range(len(ds)), test_size=num, random_state=args.seed)
         ds = Subset(ds, indices)
     
     elif att_args.attackable:
         ds = select_attackable_samples(ds, att_args.model_names, att_args.model_paths, att_args.trained_model_paths, device, frac=att_args.frac, bs=args.bs, num_classes=args.num_classes, bearpaw=args.bearpaw)
-    
 
     # Load model
     model = model_sel(args.model_name, model_path=args.model_path, num_classes=args.num_classes, bearpaw=args.bearpaw)
     model.to(device)
 
     # Obtain adversarial examples from original examples
-    ds = Trainer.attack_all(ds, model, device, method='pgd', epsilon=0.03)
+    ds = Attacker.attack_all(ds, model, device, method='pgd', epsilon=0.03)
     dl = torch.utils.data.DataLoader(ds, batch_size=args.bs, shuffle=True)
 
     # Define learning objects
