@@ -71,6 +71,6 @@ def select_attackable_samples(ds, detector_names, detector_paths, embedding_mode
     # get probabilities of being attackable
     base_dl = torch.utils.data.DataLoader(temp_ds, batch_size=bs, shuffle=False)
     probs, _ = attackability_probs(base_dl, detector_names, detector_paths, embedding_model_paths, device, bs=bs, num_classes=num_classes, bearpaw=bearpaw)
-    kept_inds = np.argsort(probs)[:num]
+    kept_inds = np.argsort(probs)[(-1*num):]
     ds = Subset(ds, kept_inds)
     return ds
